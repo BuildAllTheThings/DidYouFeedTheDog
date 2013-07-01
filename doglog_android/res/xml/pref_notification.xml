@@ -1,0 +1,10 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <CheckBoxPreference
+        android:defaultValue="true"
+        android:key="notifications_enabled"
+        android:title="@string/pref_title_send_nofifications" />
+    
+    <SwitchPreference android:title="@string/pref_title_notify_when_fed" android:key="notify_when_fed" android:dependency="notifications_enabled" android:defaultValue="false"/>
+
+</PreferenceScreen>

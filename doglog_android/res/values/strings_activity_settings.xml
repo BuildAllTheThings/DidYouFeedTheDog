@@ -1,0 +1,17 @@
+<resources>
+
+    <string name="title_activity_settings">Settings</string>
+
+    <!-- Strings related to Settings -->
+
+
+    <!-- Example General settings -->
+    <string name="pref_header_general">General</string>
+
+    <!-- Example settings for Notifications -->
+    <string name="pref_header_notifications">Notifications</string>
+    <string name="pref_title_notify_when_fed">Notify when fed</string>
+    <string name="pref_title_send_nofifications">Send notifications</string>
+    <string name="pref_title_api_endpoint">API endpoint</string>
+
+</resources>
