@@ -16,17 +16,6 @@ import java.util.List;
 
 import com.buildallthethings.doglog.R;
 
-/**
- * A {@link PreferenceActivity} that presents a set of application settings. On
- * handset devices, settings are presented as a single list. On tablets,
- * settings are split by category, with category headers shown to the left of
- * the list of settings.
- * <p>
- * See <a href="http://developer.android.com/design/patterns/settings.html">
- * Android Design: Settings</a> for design guidelines and the <a
- * href="http://developer.android.com/guide/topics/ui/settings.html">Settings
- * API Guide</a> for more information on developing a Settings UI.
- */
 public class SettingsActivity extends PreferenceActivity {
 	/**
 	 * Determines whether to always show the simplified settings UI, where
@@ -68,7 +57,12 @@ public class SettingsActivity extends PreferenceActivity {
 		// Bind the summaries of EditText/List/Dialog/Ringtone preferences to
 		// their values. When their values change, their summaries are updated
 		// to reflect the new value, per the Android Design guidelines.
-		bindPreferenceSummaryToValue(findPreference("api_endpoint"));
+		//bindPreferenceSummaryToValue(findPreference("api_endpoint"));
+		bindPreferenceSummaryToValue(findPreference("notify_at_feeding_time_offset_magnitude"));
+		bindPreferenceSummaryToValue(findPreference("notify_at_feeding_time_offset_polarity"));
+		bindPreferenceSummaryToValue(findPreference("notify_at_feeding_time_condition"));
+		bindPreferenceSummaryToValue(findPreference("notify_when_leaving_offset_magnitude"));
+		bindPreferenceSummaryToValue(findPreference("notify_when_leaving_condition"));
 	}
 	
 	/** {@inheritDoc} */
@@ -212,7 +206,7 @@ public class SettingsActivity extends PreferenceActivity {
 			// to their values. When their values change, their summaries are
 			// updated to reflect the new value, per the Android Design
 			// guidelines.
-			bindPreferenceSummaryToValue(findPreference("api_endpoint"));
+			//bindPreferenceSummaryToValue(findPreference("api_endpoint"));
 		}
 	}
 	
@@ -232,7 +226,11 @@ public class SettingsActivity extends PreferenceActivity {
 			// to their values. When their values change, their summaries are
 			// updated to reflect the new value, per the Android Design
 			// guidelines.
-			// bindPreferenceSummaryToValue(findPreference("preference_key_goes_here"));
+			bindPreferenceSummaryToValue(findPreference("notify_at_feeding_time_offset_magnitude"));
+			bindPreferenceSummaryToValue(findPreference("notify_at_feeding_time_offset_polarity"));
+			bindPreferenceSummaryToValue(findPreference("notify_at_feeding_time_condition"));
+			bindPreferenceSummaryToValue(findPreference("notify_when_leaving_offset_magnitude"));
+			bindPreferenceSummaryToValue(findPreference("notify_when_leaving_condition"));
 		}
 	}
 }

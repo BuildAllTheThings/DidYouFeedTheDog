@@ -1,37 +1,46 @@
 package com.buildallthethings.doglog.ui;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.Calendar;
 
-import com.buildallthethings.doglog.Feeding;
 import com.buildallthethings.doglog.OnFeedingHistoryChangedListener;
+import com.buildallthethings.doglog.R;
+import com.buildallthethings.doglog.db.Feeding;
+import com.buildallthethings.doglog.db.FeedingController;
 
 import android.content.Context;
-import android.widget.ArrayAdapter;
 
-public class FeedingHistoryListAdapter extends ArrayAdapter<String> implements OnFeedingHistoryChangedListener {
-	Map<String, Integer>	stringIds	= new HashMap<String, Integer>();
+public class FeedingHistoryListAdapter extends TwoTextArrayAdapter implements OnFeedingHistoryChangedListener {
+	protected final Context		context;
+	protected FeedingController	feedingController;
 	
 	public FeedingHistoryListAdapter(Context context) {
-		super(context, android.R.layout.simple_list_item_1);
+		super(context);
 		
-		// Populate the entries
-		String[] values = new String[] { "Android", "iPhone", "WindowsMobile", "Blackberry", "WebOS", "Ubuntu", "Windows7", "Max OS X", "Linux", "OS/2", "Ubuntu", "Windows7", "Max OS X", "Linux",
-				"OS/2", "Ubuntu", "Windows7", "Max OS X", "Linux", "OS/2", "Android", "iPhone", "WindowsMobile" };
-		
-		final List<String> list = new ArrayList<String>();
-		for (int i = 0; i < values.length; ++i) {
-			list.add(values[i]);
-			this.stringIds.put(values[i], i);
-		}
+		this.context = context;
 	}
 	
 	@Override
-	public long getItemId(int position) {
-		String item = getItem(position);
-		return this.stringIds.get(item);
+	public void onFeedingHistoryChanged() {
+		this.clear();
+		
+		Calendar today = Calendar.getInstance();
+		today.setTimeInMillis(System.currentTimeMillis());
+		today.set(Calendar.HOUR_OF_DAY, 0);
+		today.set(Calendar.MINUTE, 0);
+		today.set(Calendar.SECOND, 0);
+		today.set(Calendar.MILLISECOND, 0);
+		
+		this.add(new HeaderListItem(this.context.getString(R.string.recent_feedings)));
+		this.add(new HeaderListItem(this.context.getString(R.string.today)));
+		for (Feeding f : this.feedingController.getAllFeedingsBetween(today.getTimeInMillis(), System.currentTimeMillis())) {
+			this.add(new TwoTextListItem(f.amOrPm(), f.toString()));
+		}
+		this.add(new HeaderListItem(this.context.getString(R.string.previous)));
+		/*for (Feeding f : this.feedingController.getAllFeedingsBetween(0, today.getTimeInMillis())) {
+			this.add(new TwoTextListItem(f.amOrPm(), f.toString()));
+		}*/
+		
+		this.notifyDataSetChanged();
 	}
 	
 	@Override
@@ -39,8 +48,11 @@ public class FeedingHistoryListAdapter extends ArrayAdapter<String> implements O
 		return false;
 	}
 	
-	@Override
-	public void onFeedingHistoryChanged(List<Feeding> history) {
-		this.notifyDataSetChanged();
+	public void setController(FeedingController feedingController) {
+		this.feedingController = feedingController;
+		this.feedingController.registerOnFeedingHistoryChangedListener(this);
+		
+		// Initial population
+		this.onFeedingHistoryChanged();
 	}
 }

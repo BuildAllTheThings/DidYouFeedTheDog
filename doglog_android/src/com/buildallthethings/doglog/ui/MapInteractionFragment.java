@@ -15,7 +15,6 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
-import com.google.android.gms.maps.model.LatLngBounds.Builder;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
@@ -131,7 +130,7 @@ public class MapInteractionFragment extends SupportMapFragment implements OnMark
 	@Override
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
 		Log.d(Constants.TAG, "Map fragment notified of preference changed: " + key);
-		if (key.startsWith(Constants.GEOFENCE_HOME_KEY)) {
+		if (key.startsWith(Constants.PREFS_GEOFENCE_HOME)) {
 			this.redraw();
 		}
 	}

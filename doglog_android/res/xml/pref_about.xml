@@ -1,0 +1,24 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <EditTextPreference
+        android:enabled="false"
+        android:key="author"
+        android:maxLines="1"
+        android:persistent="false"
+        android:selectable="false"
+        android:shouldDisableView="false"
+        android:title="@string/about_title_author"
+        android:summary="@string/about_summary_author" />
+    
+    <EditTextPreference
+        android:enabled="false"
+        android:icon="@drawable/dog_head"
+        android:key="dog_icon"
+        android:maxLines="1"
+        android:persistent="false"
+        android:selectable="false"
+        android:shouldDisableView="false"
+        android:title="@string/about_title_dog_icon"
+        android:summary="@string/about_summary_dog_icon" />
+
+</PreferenceScreen>

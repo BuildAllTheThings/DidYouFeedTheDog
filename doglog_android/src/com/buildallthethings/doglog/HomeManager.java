@@ -65,7 +65,7 @@ public class HomeManager extends LocationAware implements OnSharedPreferenceChan
 		// Register the broadcast receiver to receive status updates
 		LocalBroadcastManager.getInstance(this.context).registerReceiver(this.geofenceTransitionReceiver, this.geofenceTransitionIntentFilter);
 		
-		this.home = new GeofencePreference(this.prefs, Constants.GEOFENCE_HOME_KEY);
+		this.home = new GeofencePreference(this.prefs, Constants.PREFS_GEOFENCE_HOME);
 		
 		this.register();
 	}
@@ -86,7 +86,7 @@ public class HomeManager extends LocationAware implements OnSharedPreferenceChan
 	protected void setUserHomeStatus(boolean userIsHome) {
 		Editor editor = this.prefs.edit();
 		// Write the Geofence values to SharedPreferences
-		editor.putBoolean(Constants.STATUS_USER_HOME, userIsHome);
+		editor.putBoolean(Constants.PREFS_USER_IS_HOME, userIsHome);
 		editor.commit();
 	}
 	
@@ -101,7 +101,7 @@ public class HomeManager extends LocationAware implements OnSharedPreferenceChan
 	@Override
 	public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
 		Log.d(Constants.TAG, "HomeOrNotHomeManager notified of preference changed: " + key);
-		if (key.startsWith(Constants.GEOFENCE_HOME_KEY)) {
+		if (key.startsWith(Constants.PREFS_GEOFENCE_HOME)) {
 			// Somebody has re-defined home. Un-register the previous geofence
 			// and register the new one.
 			this.register();
@@ -116,7 +116,7 @@ public class HomeManager extends LocationAware implements OnSharedPreferenceChan
 		// When a client becomes available, the current location will be
 		// determined, and then we will decide whether that is within the
 		// new boundaries of home.
-		if (geofencePreference.getRequestId() == Constants.GEOFENCE_HOME_KEY) {
+		if (geofencePreference.getRequestId() == Constants.PREFS_GEOFENCE_HOME) {
 			this.getLocationClient();
 		}
 	}
@@ -215,7 +215,7 @@ public class HomeManager extends LocationAware implements OnSharedPreferenceChan
 
 	@Override
 	public void onGeofenceTransition(Geofence g, int transition) {
-		if (g.getRequestId().equals(Constants.GEOFENCE_HOME_KEY)) {
+		if (g.getRequestId().equals(Constants.PREFS_GEOFENCE_HOME)) {
 			this.setUserHomeStatus(transition == Geofence.GEOFENCE_TRANSITION_ENTER);
 		}
 	}

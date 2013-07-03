@@ -4,7 +4,63 @@
         android:defaultValue="true"
         android:key="notifications_enabled"
         android:title="@string/pref_title_send_nofifications" />
-    
-    <SwitchPreference android:title="@string/pref_title_notify_when_fed" android:key="notify_when_fed" android:dependency="notifications_enabled" android:defaultValue="false"/>
+
+    <PreferenceCategory
+        android:dependency="notifications_enabled"
+        android:key="feeding_time"
+        android:title="@string/pref_title_feeding_time" >
+        <SwitchPreference
+            android:defaultValue="true"
+            android:dependency="notifications_enabled"
+            android:key="notify_at_feeding_time"
+            android:title="@string/pref_title_notify_at_feeding_time" />
+
+        <EditTextPreference
+            android:defaultValue="60"
+            android:dependency="notify_at_feeding_time"
+            android:digits="1234567890"
+            android:key="notify_at_feeding_time_offset_magnitude"
+            android:title="@string/pref_title_notify_at_feeding_time_offset_magnitude" />
+
+        <ListPreference
+            android:defaultValue="2"
+            android:dependency="notify_at_feeding_time"
+            android:entries="@array/pref_notify_offset_polarities"
+            android:entryValues="@array/pref_notify_offset_polarity_values"
+            android:key="notify_at_feeding_time_offset_polarity"
+            android:title="@string/pref_title_notify_at_feeding_time_offset_polarity" />
+         <ListPreference
+        android:defaultValue="0"
+        android:dependency="notify_at_feeding_time"
+        android:entries="@array/pref_notify_conditions"
+        android:entryValues="@array/pref_notify_condition_values"
+        android:key="notify_at_feeding_time_condition"
+        android:title="@string/pref_title_notify_at_feeding_time_condition" />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:dependency="notifications_enabled"
+        android:key="when_leaving"
+        android:title="@string/pref_title_when_leaving" >
+        <SwitchPreference
+            android:defaultValue="true"
+            android:dependency="notifications_enabled"
+            android:key="notify_when_leaving"
+            android:title="@string/pref_title_notify_when_leaving" />
+    <EditTextPreference
+        android:defaultValue="120"
+        android:dependency="notify_when_leaving"
+        android:digits="1234567890"
+        android:key="notify_when_leaving_offset_magnitude"
+        android:title="@string/pref_title_notify_when_leaving_offset_magnitude" />
+    <ListPreference
+        android:defaultValue="0"
+        android:dependency="notify_when_leaving"
+        android:entries="@array/pref_notify_conditions"
+        android:entryValues="@array/pref_notify_condition_values"
+        android:key="notify_when_leaving_condition"
+        android:title="@string/pref_title_notify_when_leaving_condition" />
+    </PreferenceCategory>
+
+    <!-- <SwitchPreference android:title="@string/pref_title_notify_when_fed" android:key="notify_when_fed" android:dependency="notifications_enabled" android:defaultValue="false"/> -->
 
 </PreferenceScreen>

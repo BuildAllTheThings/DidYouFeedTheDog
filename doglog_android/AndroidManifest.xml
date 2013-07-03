@@ -8,14 +8,17 @@
         android:minSdkVersion="11"
         android:targetSdkVersion="17" />
 
-    <!-- Always on -->
+    <!-- Always-on timers and geofences must be re-registered at boot -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    
-    <!-- Alarms -->
+
+    <!-- Timers -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <!-- Geofencing: -->
+    <!-- Geofencing -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    
+    <!-- Notifications -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <!-- Maps -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -40,7 +43,7 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@drawable/dog_head"
         android:label="@string/app_name" >
 
         <!-- Maps -->
@@ -53,10 +56,15 @@
             android:label="@string/title_activity_settings" >
         </activity>
         <activity
+            android:name=".ui.AboutActivity"
+            android:label="@string/title_activity_about" >
+        </activity>
+        <activity
             android:name=".ui.MainActivity"
             android:label="@string/title_activity_main" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -65,12 +73,14 @@
             android:name=".geo.GeofenceMonitoringService"
             android:exported="false" >
         </service>
-        
-        <receiver
-            android:name=".FeedingTimeReceiver" >
+
+        <receiver android:name=".FeedingTimeReceiver" >
         </receiver>
-        <receiver
-            android:name=".TimeChangedReceiver" >
+        <receiver android:name=".TimeChangedReceiver" >
+            <intent-filter>
+                <action android:name="android.intent.ACTION_TIMEZONE_CHANGED" />
+                <action android:name="android.intent.ACTION_TIME" />
+            </intent-filter>
         </receiver>
     </application>
 

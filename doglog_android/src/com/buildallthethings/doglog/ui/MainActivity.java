@@ -3,6 +3,7 @@ package com.buildallthethings.doglog.ui;
 import com.buildallthethings.doglog.ui.GeofenceCreationDialogListener;
 import com.buildallthethings.doglog.geo.GeofenceTransitionReceiver;
 import com.buildallthethings.doglog.Constants;
+import com.buildallthethings.doglog.FeedingManager;
 import com.buildallthethings.doglog.HomeManager;
 import com.buildallthethings.doglog.R;
 
@@ -26,6 +27,9 @@ public class MainActivity extends FragmentActivity implements GeofenceCreationDi
 	protected HomeManager						homeManager;
 	private GeofenceTransitionReceiver			mBroadcastReceiver;
 	private IntentFilter						mIntentFilter;
+	
+	// Logging feedings
+	protected FeedingManager					feedingManager;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +55,24 @@ public class MainActivity extends FragmentActivity implements GeofenceCreationDi
 		
 		this.homeManager = HomeManager.getInstance(this);
 		this.homeManager.setMainActivity(this);
+		this.feedingManager = FeedingManager.getInstance(this);
+		
+		// Get the intent that started this activity
+		Intent intent = this.getIntent();
+		String action = intent.getAction();
+		if (action != null) {
+			if (action.equals(Constants.INTENT_ACTION_VIEW_FEEDINGS) || action.equals(Constants.INTENT_ACTION_LOG_FEEDING) || action.equals(Constants.INTENT_ACTION_SKIP_FEEDING)) {
+				// Switch to overview fragment
+				this.mViewPager.setCurrentItem(0);
+				
+				if (action.equals(Constants.INTENT_ACTION_LOG_FEEDING)) {
+					this.feedingManager.logFeeding();
+				} else if (action.equals(Constants.INTENT_ACTION_SKIP_FEEDING)) {
+					// ?
+					;
+				}
+			}
+		}
 	}
 	
 	@Override
@@ -64,8 +86,12 @@ public class MainActivity extends FragmentActivity implements GeofenceCreationDi
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 			case R.id.action_settings:
-				Intent intent = new Intent(this, SettingsActivity.class);
-				startActivity(intent);
+				Intent settingsIntent = new Intent(this, SettingsActivity.class);
+				startActivity(settingsIntent);
+				return true;
+			case R.id.action_about:
+				Intent aboutIntent = new Intent(this, AboutActivity.class);
+				startActivity(aboutIntent);
 				return true;
 			default:
 				return super.onOptionsItemSelected(item);
@@ -97,7 +123,7 @@ public class MainActivity extends FragmentActivity implements GeofenceCreationDi
 						// re-attempt our registration.
 						this.homeManager.register();
 						break;
-						
+					
 					default:
 						// Report that Google Play services was unable to
 						// resolve the problem.
@@ -105,7 +131,7 @@ public class MainActivity extends FragmentActivity implements GeofenceCreationDi
 						break;
 				}
 				break;
-				
+			
 			default:
 				// Report that this Activity received an unknown requestCode
 				Log.d(Constants.TAG, getString(R.string.unknown_activity_request_code, requestCode));

@@ -59,12 +59,12 @@ public class LocationAware implements ConnectionCallbacks, OnConnectionFailedLis
 	
 	@Override
 	public void onConnected(Bundle arg0) {
-		Log.d("LocationAware", this.getClass().getSimpleName() + " connected");
+		Log.d(Constants.TAG, this.getClass().getSimpleName() + " connected");
 	}
 	
 	@Override
 	public void onDisconnected() {
-		Log.d("LocationAware", this.getClass().getSimpleName() + " disconnected");
+		Log.d(Constants.TAG, this.getClass().getSimpleName() + " disconnected");
 	}
 	
 	public void onConnectionFailed(ConnectionResult connectionResult) {
