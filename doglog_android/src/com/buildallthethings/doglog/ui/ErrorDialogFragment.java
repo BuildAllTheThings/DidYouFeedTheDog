@@ -1,4 +1,4 @@
-package com.buildallthethings.doglog;
+package com.buildallthethings.doglog.ui;
 
 import android.app.Dialog;
 import android.os.Bundle;

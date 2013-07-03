@@ -1,4 +1,4 @@
-package com.buildallthethings.doglog;
+package com.buildallthethings.doglog.ui;
 
 import java.util.Locale;
 
@@ -7,7 +7,8 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentPagerAdapter;
 
-import com.buildallthethings.doglog.DummyFragment;
+import com.buildallthethings.doglog.R;
+import com.buildallthethings.doglog.ui.DummyFragment;
 
 /**
  * A {@link FragmentPagerAdapter} that returns a fragment corresponding to one

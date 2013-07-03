@@ -1,4 +1,4 @@
-package com.buildallthethings.doglog;
+package com.buildallthethings.doglog.ui;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -13,6 +13,8 @@ import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 
 import java.util.List;
+
+import com.buildallthethings.doglog.R;
 
 /**
  * A {@link PreferenceActivity} that presents a set of application settings. On

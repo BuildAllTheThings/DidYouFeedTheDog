@@ -1,16 +1,15 @@
-package com.buildallthethings.doglog;
+package com.buildallthethings.doglog.geo;
 
+import com.buildallthethings.doglog.Constants;
 import com.buildallthethings.doglog.R;
-import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.LocationStatusCodes;
 import com.google.android.gms.location.LocationClient.OnAddGeofencesResultListener;
 import com.google.android.gms.location.LocationClient.OnRemoveGeofencesResultListener;
 
-import android.app.Activity;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
-import android.content.IntentSender.SendIntentException;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -30,34 +29,32 @@ import java.util.Set;
  * activity. Call addGeofence and removeGeofence as desired.
  * 
  */
-public class GeofenceManager extends LocationAware implements OnAddGeofencesResultListener, OnRemoveGeofencesResultListener {
-	
-	// Storage for a reference to the calling client
-	private final Activity		activity;
-	
+public class GeofencePreferenceManager extends LocationAware implements OnAddGeofencesResultListener, OnRemoveGeofencesResultListener {
 	// Stores the PendingIntent used to send geofence transitions back to the
 	// app
-	private PendingIntent		locationServicesPendingIntent;
+	private PendingIntent								locationServicesPendingIntent;
 	
-	protected List<String>		currentGeofenceIds;
-	protected List<Geofence>	pendingGeofenceAdditions;
-	protected List<String>		pendingGeofenceIdRemovals;
-	protected List<Geofence>	queuedGeofenceAdditions;
-	protected List<String>		queuedGeofenceIdRemovals;
+	protected List<GeofencePreference>					currentGeofencePreferences;
+	protected List<GeofencePreference>					pendingGeofencePreferenceAdditions;
+	protected List<String>								pendingGeofenceIdRemovals;
+	protected List<GeofencePreference>					queuedGeofencePreferenceAdditions;
+	protected List<String>								queuedGeofenceIdRemovals;
 	
-	public GeofenceManager(Activity activity) {
-		super(activity);
-		
-		this.activity = activity;
+	protected List<OnGeofencePreferenceAddedListener>	onGeofencePreferenceAddedListeners;
+	
+	public GeofencePreferenceManager(Context context) {
+		super(context);
 		
 		this.locationServicesPendingIntent = null;
 		this.locationServices = null;
 		
-		this.currentGeofenceIds = new ArrayList<String>();
-		this.pendingGeofenceAdditions = new ArrayList<Geofence>();
+		this.currentGeofencePreferences = new ArrayList<GeofencePreference>();
+		this.pendingGeofencePreferenceAdditions = new ArrayList<GeofencePreference>();
 		this.pendingGeofenceIdRemovals = new ArrayList<String>();
-		this.queuedGeofenceAdditions = new ArrayList<Geofence>();
+		this.queuedGeofencePreferenceAdditions = new ArrayList<GeofencePreference>();
 		this.queuedGeofenceIdRemovals = new ArrayList<String>();
+		
+		this.onGeofencePreferenceAddedListeners = new ArrayList<OnGeofencePreferenceAddedListener>();
 	}
 	
 	/**
@@ -76,12 +73,12 @@ public class GeofenceManager extends LocationAware implements OnAddGeofencesResu
 	 * @param geofences
 	 *            A List of one or more geofences to add
 	 */
-	public void addGeofence(Geofence geofence) {
+	public void addGeofence(GeofencePreference geofencePreference) {
 		// Save the geofences so that they can be sent to Location Services once
 		// the connection is available.
 		// Ensure the geofence is not already present.
-		this.removeGeofence(geofence);
-		this.queuedGeofenceAdditions.add(geofence);
+		this.removeGeofencePreference(geofencePreference);
+		this.queuedGeofencePreferenceAdditions.add(geofencePreference);
 		
 		// This will either start the process of getting a new location services
 		// client, or do nothing if such a process is already underway.
@@ -96,17 +93,17 @@ public class GeofenceManager extends LocationAware implements OnAddGeofencesResu
 		boolean connectionRequired = false;
 		
 		// Check the addition lists first.
-		for (Geofence g : this.queuedGeofenceAdditions) {
+		for (GeofencePreference g : this.queuedGeofencePreferenceAdditions) {
 			if (id == g.getRequestId()) {
 				// It hasn't even been requested yet. Just don't add it and
 				// we're done.
-				this.queuedGeofenceAdditions.remove(g);
+				this.queuedGeofencePreferenceAdditions.remove(g);
 				found = true;
 				break;
 			}
 		}
 		if (!found) {
-			for (Geofence g : this.pendingGeofenceAdditions) {
+			for (GeofencePreference g : this.pendingGeofencePreferenceAdditions) {
 				if (id == g.getRequestId()) {
 					// It is in the middle of being added, this is tricky
 					// We will add it to the queue for removal. We guarantee to
@@ -127,12 +124,12 @@ public class GeofenceManager extends LocationAware implements OnAddGeofencesResu
 		}
 		
 		if (!found) {
-			for (String currentGeofenceId : this.currentGeofenceIds) {
-				if (id == currentGeofenceId) {
+			for (GeofencePreference g : this.currentGeofencePreferences) {
+				if (id == g.getRequestId()) {
 					// It exists. Add it to "queued for removal".
 					// When the removal is complete, it will removed from
 					// "current".
-					this.queuedGeofenceIdRemovals.add(currentGeofenceId);
+					this.queuedGeofenceIdRemovals.add(id);
 					found = true;
 					connectionRequired = true;
 					break;
@@ -174,7 +171,7 @@ public class GeofenceManager extends LocationAware implements OnAddGeofencesResu
 		}
 	}
 	
-	public void removeGeofence(Geofence geofence) {
+	public void removeGeofencePreference(GeofencePreference geofence) {
 		removeGeofenceById(geofence.getRequestId());
 	}
 	
@@ -195,20 +192,22 @@ public class GeofenceManager extends LocationAware implements OnAddGeofencesResu
 			
 			this.locationServices.removeGeofences(this.pendingGeofenceIdRemovals, this);
 			
-		} else if (this.queuedGeofenceAdditions.size() > 0) {
+		} else if (this.queuedGeofencePreferenceAdditions.size() > 0) {
 			// Get the PendingIntent that Location Services will issue when a
 			// geofence transition occurs
 			PendingIntent pendingIntent = createRequestPendingIntent();
 			
-			assert this.pendingGeofenceAdditions.size() == 0;
+			assert this.pendingGeofencePreferenceAdditions.size() == 0;
 			
 			// Send a request to add the current geofences
-			for (Geofence g : queuedGeofenceAdditions) {
-				this.pendingGeofenceAdditions.add(g);
+			List<Geofence> requestedGeofences = new ArrayList<Geofence>();
+			for (GeofencePreference g : queuedGeofencePreferenceAdditions) {
+				this.pendingGeofencePreferenceAdditions.add(g);
+				requestedGeofences.add(g.toGeofence());
 			}
-			this.queuedGeofenceAdditions.clear();
+			this.queuedGeofencePreferenceAdditions.clear();
 			
-			this.locationServices.addGeofences(this.pendingGeofenceAdditions, pendingIntent, this);
+			this.locationServices.addGeofences(requestedGeofences, pendingIntent, this);
 			
 		} else {
 			
@@ -222,57 +221,39 @@ public class GeofenceManager extends LocationAware implements OnAddGeofencesResu
 	 */
 	@Override
 	public void onAddGeofencesResult(int statusCode, String[] geofenceRequestIds) {
-		
-		// Create a broadcast Intent that notifies other components of success
-		// or failure
-		Intent broadcastIntent = new Intent();
-		
-		// Temp storage for messages
-		String msg;
-		
 		if (LocationStatusCodes.SUCCESS == statusCode) {
 			// Adding the geofences was successful
 			// Upgrade them from "pending" to "current"
 			Set<String> newGeofenceIds = new HashSet<String>();
 			for (String id : geofenceRequestIds) {
 				newGeofenceIds.add(id);
-				this.currentGeofenceIds.add(id);
 			}
 			// Remove all upgraded geofences from "pending"
-			Iterator<Geofence> i = this.pendingGeofenceAdditions.iterator();
+			Iterator<GeofencePreference> i = this.pendingGeofencePreferenceAdditions.iterator();
 			while (i.hasNext()) {
-				Geofence g = i.next();
+				GeofencePreference g = i.next();
 				if (newGeofenceIds.contains(g.getRequestId())) {
 					i.remove();
+					this.currentGeofencePreferences.add(g);
+					for (OnGeofencePreferenceAddedListener listener : this.onGeofencePreferenceAddedListeners) {
+						listener.onGeofencePreferenceAdded(g);
+					}
 				}
 			}
-			
-			// Create a message containing all the geofence IDs added.
-			msg = this.activity.getString(R.string.add_geofences_result_success, Arrays.toString(geofenceRequestIds));
-			
-			// In debug mode, log the result
-			Log.d(GeofenceUtils.APPTAG, msg);
-			
-			// Create an Intent to broadcast to the app
-			broadcastIntent.setAction(GeofenceUtils.ACTION_GEOFENCES_ADDED).addCategory(GeofenceUtils.CATEGORY_LOCATION_SERVICES).putExtra(GeofenceUtils.EXTRA_GEOFENCE_STATUS, msg);
-			
 		} else {
 			// Adding the geofences failed
-			/*
-			 * Create a message containing the error code and the list of
-			 * geofence IDs you tried to add
-			 */
-			msg = this.activity.getString(R.string.add_geofences_result_failure, statusCode, Arrays.toString(geofenceRequestIds));
-			
-			// Log an error
-			Log.e(GeofenceUtils.APPTAG, msg);
+			String errorMessage = this.context.getString(R.string.add_geofences_result_failure, statusCode, Arrays.toString(geofenceRequestIds));
+			Log.e(Constants.TAG, errorMessage);
 			
 			// Create an Intent to broadcast to the app
-			broadcastIntent.setAction(GeofenceUtils.ACTION_GEOFENCE_ERROR).addCategory(GeofenceUtils.CATEGORY_LOCATION_SERVICES).putExtra(GeofenceUtils.EXTRA_GEOFENCE_STATUS, msg);
+			// Create a broadcast Intent that notifies other components of
+			// success
+			// or failure
+			Intent broadcastIntent = new Intent();
+			broadcastIntent.setAction(Constants.INTENT_ACTION_GEOFENCE_ERROR).addCategory(Constants.INTENT_CATEGORY_LOCATION_SERVICES).putExtra(Constants.INTENT_EXTRA_GEOFENCE_STATUS, errorMessage);
+			// Broadcast whichever result occurred
+			LocalBroadcastManager.getInstance(this.context).sendBroadcast(broadcastIntent);
 		}
-		
-		// Broadcast whichever result occurred
-		LocalBroadcastManager.getInstance(this.activity).sendBroadcast(broadcastIntent);
 		
 		this.continueProcessingGeofences();
 	}
@@ -284,50 +265,27 @@ public class GeofenceManager extends LocationAware implements OnAddGeofencesResu
 	
 	@Override
 	public void onRemoveGeofencesByRequestIdsResult(int statusCode, String[] geofenceRequestIds) {
-		// Create a broadcast Intent that notifies other components of success
-		// or failure
-		Intent broadcastIntent = new Intent();
-		
-		// Temp storage for messages
-		String msg;
-		
 		// If removing the geocodes was successful
 		if (LocationStatusCodes.SUCCESS == statusCode) {
-			
 			// Removing the geofences was successful
 			// Remove them from both "current" and "pending removal".
 			for (String id : geofenceRequestIds) {
 				this.pendingGeofenceIdRemovals.remove(id);
-				this.currentGeofenceIds.remove(id);
+				this.currentGeofencePreferences.remove(id);
 			}
-			
-			// Create a message containing all the geofence IDs removed.
-			msg = this.activity.getString(R.string.remove_geofences_id_success, Arrays.toString(geofenceRequestIds));
-			
-			// In debug mode, log the result
-			Log.d(GeofenceUtils.APPTAG, msg);
-			
-			// Create an Intent to broadcast to the app
-			broadcastIntent.setAction(GeofenceUtils.ACTION_GEOFENCES_REMOVED).addCategory(GeofenceUtils.CATEGORY_LOCATION_SERVICES).putExtra(GeofenceUtils.EXTRA_GEOFENCE_STATUS, msg);
-			
 		} else {
-			// If removing the geocodes failed
-			
-			/*
-			 * Create a message containing the error code and the list of
-			 * geofence IDs you tried to remove
-			 */
-			msg = this.activity.getString(R.string.remove_geofences_id_failure, statusCode, Arrays.toString(geofenceRequestIds));
+			// If removing the geofences failed, create a message containing the
+			// error code and the list of geofence IDs you tried to remove
+			String errorMessage = this.context.getString(R.string.remove_geofences_id_failure, statusCode, Arrays.toString(geofenceRequestIds));
 			
 			// Log an error
-			Log.e(GeofenceUtils.APPTAG, msg);
+			Log.e(Constants.TAG, errorMessage);
 			
 			// Create an Intent to broadcast to the app
-			broadcastIntent.setAction(GeofenceUtils.ACTION_GEOFENCE_ERROR).addCategory(GeofenceUtils.CATEGORY_LOCATION_SERVICES).putExtra(GeofenceUtils.EXTRA_GEOFENCE_STATUS, msg);
+			Intent broadcastIntent = new Intent();
+			broadcastIntent.setAction(Constants.INTENT_ACTION_GEOFENCE_ERROR).addCategory(Constants.INTENT_CATEGORY_LOCATION_SERVICES).putExtra(Constants.INTENT_EXTRA_GEOFENCE_STATUS, errorMessage);
+			LocalBroadcastManager.getInstance(this.context).sendBroadcast(broadcastIntent);
 		}
-		
-		// Broadcast whichever result occurred
-		LocalBroadcastManager.getInstance(this.activity).sendBroadcast(broadcastIntent);
 		
 		this.continueProcessingGeofences();
 	}
@@ -351,7 +309,7 @@ public class GeofenceManager extends LocationAware implements OnAddGeofencesResu
 	private PendingIntent createRequestPendingIntent() {
 		if (this.locationServicesPendingIntent == null) {
 			// Create an Intent pointing to the IntentService
-			Intent intent = new Intent(this.activity, GeofenceMonitoringService.class);
+			Intent intent = new Intent(this.context, GeofenceMonitoringService.class);
 			
 			/*
 			 * Return a PendingIntent to start the IntentService. Always create
@@ -360,56 +318,14 @@ public class GeofenceManager extends LocationAware implements OnAddGeofencesResu
 			 * updates the original. Otherwise, Location Services can't match
 			 * the PendingIntent to requests made with it.
 			 */
-			this.locationServicesPendingIntent = PendingIntent.getService(this.activity, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			this.locationServicesPendingIntent = PendingIntent.getService(this.context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 		}
 		
 		// Return the existing intent
 		return this.locationServicesPendingIntent;
 	}
 	
-	/*
-	 * Implementation of OnConnectionFailedListener.onConnectionFailed If a
-	 * connection or disconnection request fails, report the error
-	 * connectionResult is passed in from Location Services
-	 */
-	@Override
-	public void onConnectionFailed(ConnectionResult connectionResult) {
-		// Downgrade the "requested" geofences to "pending".
-		for (Geofence g : this.pendingGeofenceAdditions) {
-			this.queuedGeofenceAdditions.add(g);
-		}
-		this.pendingGeofenceAdditions.clear();
-		
-		/*
-		 * Google Play services can resolve some errors it detects. If the error
-		 * has a resolution, try sending an Intent to start a Google Play
-		 * services activity that can resolve error.
-		 */
-		if (connectionResult.hasResolution()) {
-			
-			try {
-				// Start an Activity that tries to resolve the error
-				connectionResult.startResolutionForResult(this.activity, GeofenceUtils.CONNECTION_FAILURE_RESOLUTION_REQUEST);
-				
-				/*
-				 * Thrown if Google Play services canceled the original
-				 * PendingIntent
-				 */
-			} catch (SendIntentException e) {
-				// Log the error
-				e.printStackTrace();
-			}
-			
-			/*
-			 * If no resolution is available, put the error code in an error
-			 * Intent and broadcast it back to the main Activity. The Activity
-			 * then displays an error dialog. is out of date.
-			 */
-		} else {
-			
-			Intent errorBroadcastIntent = new Intent(GeofenceUtils.ACTION_CONNECTION_ERROR);
-			errorBroadcastIntent.addCategory(GeofenceUtils.CATEGORY_LOCATION_SERVICES).putExtra(GeofenceUtils.EXTRA_CONNECTION_ERROR_CODE, connectionResult.getErrorCode());
-			LocalBroadcastManager.getInstance(activity).sendBroadcast(errorBroadcastIntent);
-		}
+	public void registerOnGeofencePreferenceAddedListener(OnGeofencePreferenceAddedListener listener) {
+		this.onGeofencePreferenceAddedListeners.add(listener);
 	}
 }

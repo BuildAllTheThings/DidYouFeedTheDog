@@ -8,6 +8,12 @@
         android:minSdkVersion="11"
         android:targetSdkVersion="17" />
 
+    <!-- Always on -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    
+    <!-- Alarms -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
     <!-- Geofencing: -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
@@ -20,12 +26,12 @@
 
     <!-- Maps -->
     <permission
-        android:name="com.buildallthethings.doglog.permission.MAPS_RECEIVE"
+        android:name=".permission.MAPS_RECEIVE"
         android:protectionLevel="signature" >
     </permission>
 
     <!-- Maps -->
-    <uses-permission android:name="com.buildallthethings.doglog.permission.MAPS_RECEIVE" />
+    <uses-permission android:name=".permission.MAPS_RECEIVE" />
 
     <!-- Maps -->
     <uses-feature
@@ -43,23 +49,29 @@
             android:value="AIzaSyB3t2FQytIK3EIPCisv57O_4ENYHh8Cd2g" />
 
         <activity
-            android:name="com.buildallthethings.doglog.SettingsActivity"
+            android:name=".ui.SettingsActivity"
             android:label="@string/title_activity_settings" >
         </activity>
         <activity
-            android:name="com.buildallthethings.doglog.MainActivity"
+            android:name=".ui.MainActivity"
             android:label="@string/title_activity_main" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
         <service
-            android:name="com.buildallthethings.doglog.GeofenceMonitoringService"
+            android:name=".geo.GeofenceMonitoringService"
             android:exported="false" >
         </service>
+        
+        <receiver
+            android:name=".FeedingTimeReceiver" >
+        </receiver>
+        <receiver
+            android:name=".TimeChangedReceiver" >
+        </receiver>
     </application>
 
 </manifest>

@@ -1,10 +1,14 @@
-package com.buildallthethings.doglog;
+package com.buildallthethings.doglog.geo;
 
 import android.content.Context;
-import android.location.Location;
+import android.content.Intent;
+import android.content.IntentSender.SendIntentException;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import com.buildallthethings.doglog.Constants;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
@@ -18,6 +22,9 @@ public class LocationAware implements ConnectionCallbacks, OnConnectionFailedLis
 	// Stores the current instantiation of the location client
 	protected LocationClient	locationServices;
 	
+	// Some advanced "nice-to-have" error handling requires an activity.
+	protected FragmentActivity	mainActivity;
+	
 	protected LocationAware(Context context) {
 		this.context = context;
 	}
@@ -29,7 +36,6 @@ public class LocationAware implements ConnectionCallbacks, OnConnectionFailedLis
 	 */
 	protected GooglePlayServicesClient getLocationClient() {
 		if (this.locationServices == null) {
-			
 			this.locationServices = new LocationClient(this.context, this, this);
 		}
 		if (!this.locationServices.isConnected() && !this.locationServices.isConnecting()) {
@@ -61,9 +67,31 @@ public class LocationAware implements ConnectionCallbacks, OnConnectionFailedLis
 		Log.d("LocationAware", this.getClass().getSimpleName() + " disconnected");
 	}
 	
-	// There are almost certainly better ways of handling this, you may want to override it.
-	// For instance, actually parsing the connection result would be a better way.
 	public void onConnectionFailed(ConnectionResult connectionResult) {
-		;
+		// Google Play services can resolve some errors it detects. If the error
+		// has a resolution, try sending an Intent to start a Google Play
+		// services activity that can resolve error.
+		if (connectionResult.hasResolution() && this.mainActivity != null) {
+			try {
+				// Start an Activity that tries to resolve the error
+				connectionResult.startResolutionForResult(this.mainActivity, Constants.PLAY_CONNECTION_FAILURE_CODE);
+				
+			} catch (SendIntentException e) {
+				// Thrown if Google Play services canceled the original
+				// PendingIntent. Log the error
+				e.printStackTrace();
+			}
+		} else {
+			// If no resolution is available, put the error code in an error
+			// Intent and broadcast it back to the main Activity. The Activity
+			// then displays an error dialog. is out of date.
+			Intent errorBroadcastIntent = new Intent(Constants.INTENT_ACTION_CONNECTION_ERROR);
+			errorBroadcastIntent.addCategory(Constants.INTENT_CATEGORY_LOCATION_SERVICES).putExtra(Constants.INTENT_EXTRA_CONNECTION_ERROR_CODE, connectionResult.getErrorCode());
+			LocalBroadcastManager.getInstance(this.context).sendBroadcast(errorBroadcastIntent);
+		}
+	}
+	
+	public void setMainActivity(FragmentActivity mainActivity) {
+		this.mainActivity = mainActivity;
 	}
 }

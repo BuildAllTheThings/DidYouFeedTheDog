@@ -1,4 +1,6 @@
-package com.buildallthethings.doglog;
+package com.buildallthethings.doglog.ui;
+
+import com.buildallthethings.doglog.R;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -13,17 +15,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 
-public class GeofenceCreationDialogFragment extends DialogFragment implements
-		OnEditorActionListener {
-	
-	/*
-	 * The activity that creates an instance of this dialog fragment must
-	 * implement this interface in order to receive event callbacks. Each method
-	 * passes the DialogFragment in case the host needs to query it.
-	 */
-	public interface GeofenceCreationDialogListener {
-		public void onGeofenceAddressSelected(String address);
-	}
+public class GeofenceCreationDialogFragment extends DialogFragment implements OnEditorActionListener {
 	
 	// Use this instance of the interface to deliver action events
 	GeofenceCreationDialogListener	addressListener;
@@ -42,16 +34,13 @@ public class GeofenceCreationDialogFragment extends DialogFragment implements
 			this.addressListener = (GeofenceCreationDialogListener) activity;
 		} catch (ClassCastException e) {
 			// The activity doesn't implement the interface, throw exception
-			throw new ClassCastException(activity.toString()
-					+ " must implement GeofenceCreationDialogListener");
+			throw new ClassCastException(activity.toString() + " must implement GeofenceCreationDialogListener");
 		}
 	}
 	
 	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container,
-			Bundle savedInstanceState) {
-		View view = inflater.inflate(R.layout.fragment_dialog_set_home,
-				container);
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+		View view = inflater.inflate(R.layout.fragment_dialog_set_home, container);
 		this.getDialog().setTitle(R.string.set_address);
 		// this.setIcon(R.drawable.ic_menu_home);
 		
@@ -59,8 +48,7 @@ public class GeofenceCreationDialogFragment extends DialogFragment implements
 		
 		// Show soft keyboard automatically
 		this.addressText.requestFocus();
-		this.getDialog().getWindow()
-				.setSoftInputMode(LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+		this.getDialog().getWindow().setSoftInputMode(LayoutParams.SOFT_INPUT_STATE_VISIBLE);
 		this.addressText.setOnEditorActionListener(this);
 		
 		return view;
@@ -70,8 +58,7 @@ public class GeofenceCreationDialogFragment extends DialogFragment implements
 	public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
 		if (EditorInfo.IME_ACTION_DONE == actionId) {
 			// Return input text to activity
-			this.addressListener.onGeofenceAddressSelected(this.addressText
-					.getText().toString());
+			this.addressListener.onGeofenceAddressSelected(this.addressText.getText().toString());
 			this.dismiss();
 			return true;
 		}

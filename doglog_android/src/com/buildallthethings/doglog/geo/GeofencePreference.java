@@ -1,9 +1,10 @@
-package com.buildallthethings.doglog;
+package com.buildallthethings.doglog.geo;
 
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.util.Log;
 
+import com.buildallthethings.doglog.Constants;
 import com.google.android.gms.location.Geofence;
 
 /**
@@ -66,6 +67,10 @@ public class GeofencePreference {
 		return this.radius;
 	}
 	
+	public String getRequestId() {
+		return this.key;
+	}
+	
 	/**
 	 * Creates a Location Services Geofence object
 	 * 
@@ -73,7 +78,7 @@ public class GeofencePreference {
 	 */
 	public Geofence toGeofence() {
 		// Build a new Geofence object
-		return new Geofence.Builder().setRequestId("home").setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER | Geofence.GEOFENCE_TRANSITION_EXIT)
+		return new Geofence.Builder().setRequestId(this.key).setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER | Geofence.GEOFENCE_TRANSITION_EXIT)
 				.setCircularRegion(this.getLatitude(), this.getLongitude(), this.getRadius()).setExpirationDuration(Geofence.NEVER_EXPIRE).build();
 	}
 	

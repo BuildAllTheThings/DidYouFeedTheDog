@@ -1,4 +1,4 @@
-package com.buildallthethings.doglog;
+package com.buildallthethings.doglog.geo;
 
 import com.buildallthethings.doglog.R;
 import com.google.android.gms.common.ConnectionResult;

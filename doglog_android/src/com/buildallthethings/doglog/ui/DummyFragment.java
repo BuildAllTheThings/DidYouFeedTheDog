@@ -1,4 +1,6 @@
-package com.buildallthethings.doglog;
+package com.buildallthethings.doglog.ui;
+
+import com.buildallthethings.doglog.R;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
