@@ -13,6 +13,7 @@ public class Constants {
 	public static final String	PREFS_NOTIFY_FEEDING_TIME					= "notify_at_feeding_time";
 	public static final String	PREFS_NOTIFY_FEEDING_TIME_OFFSET_MAGNITUDE	= "notify_at_feeding_time_offset_magnitude";
 	public static final String	PREFS_NOTIFY_FEEDING_TIME_OFFSET_POLARITY	= "notify_at_feeding_time_offset_polarity";
+	public static final String	PREFS_UI_DISPLAY_LAT_LONG_OF_USER			= "ui_display_lat_long_of_user";
 	
 	// Google Play services resolution
 	public static final int		PLAY_CONNECTION_FAILURE_CODE				= 9000;
@@ -25,6 +26,8 @@ public class Constants {
 	public static final String	INTENT_EXTRA_GEOFENCE_STATUS				= PACKAGE + ".INTENT_EXTRA_GEOFENCE_STATUS";
 	public static final String	INTENT_ACTION_GEOFENCE_TRANSITION			= PACKAGE + ".INTENT_ACTION_GEOFENCE_TRANSITION";
 	public static final String	INTENT_EXTRA_GEOFENCE_TRANSITION			= PACKAGE + ".INTENT_EXTRA_GEOFENCE_TRANSITION";
+	public static final String	INTENT_ACTION_LOCATION_UPDATE				= PACKAGE + ".INTENT_ACTION_LOCATION_UPDATE";
+	public static final String	INTENT_EXTRA_LOCATION						= PACKAGE + ".INTENT_EXTRA_LOCATION";
 	public static final String	INTENT_ACTION_VIEW_FEEDINGS					= PACKAGE + ".INTENT_ACTION_VIEW_FEEDINGS";
 	public static final String	INTENT_ACTION_LOG_FEEDING					= PACKAGE + ".INTENT_ACTION_LOG_FEEDING";
 	public static final String	INTENT_ACTION_SKIP_FEEDING					= PACKAGE + ".INTENT_ACTION_SKIP_FEEDING";

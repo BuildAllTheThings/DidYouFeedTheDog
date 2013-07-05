@@ -40,6 +40,7 @@ public class FeedingController {
 	
 	public Feeding createFeeding() {
 		ContentValues values = new ContentValues();
+		// Stored as Unix timestamps
 		values.put(Helper.COLUMN_TIMESTAMP, System.currentTimeMillis() / 1000);
 		long id = this.database.insert(Helper.TABLE_FEEDINGS, null, values);
 		Log.d(Constants.TAG, "Feeding created with id: " + id);
@@ -58,10 +59,10 @@ public class FeedingController {
 		this.notifyListeners();
 	}
 	
-	public List<Feeding> getAllFeedings() {
+	protected List<Feeding> getAllFeedings(String selection, String[] selectionArgs, String groupBy, String having, String orderBy) {
 		List<Feeding> feedings = new ArrayList<Feeding>();
 		
-		Cursor cursor = this.database.query(Helper.TABLE_FEEDINGS, this.allColumns, null, null, null, null, null);
+		Cursor cursor = this.database.query(Helper.TABLE_FEEDINGS, this.allColumns, selection, selectionArgs, groupBy, having, orderBy);
 		
 		cursor.moveToFirst();
 		while (!cursor.isAfterLast()) {
@@ -74,10 +75,22 @@ public class FeedingController {
 		return feedings;
 	}
 	
+	public List<Feeding> getAllFeedings() {
+		return this.getAllFeedings(null, null, null, null, null);
+	}
+	
 	private Feeding cursorToFeeding(Cursor cursor) {
+		String debug = "";
+		for (String col : cursor.getColumnNames()) {
+			if (debug.length() > 0) {
+				debug += ", ";
+			}
+			debug += col + ": " + cursor.getString(cursor.getColumnIndex(col)); 
+		}
+		Log.d(Constants.TAG, "Read feeding: " + debug);
 		Feeding feeding = new Feeding();
 		feeding.setId(cursor.getLong(0));
-		feeding.setTimestamp(cursor.getLong(1));
+		feeding.setUnixTimestamp(cursor.getLong(1));
 		return feeding;
 	}
 	
@@ -86,6 +99,7 @@ public class FeedingController {
 	}
 	
 	public List<Feeding> getAllFeedingsBetween(long since, long until) {
-		return this.getAllFeedings();
+		// Passed Posix timestamps, but stored as Unix timestamps
+		return this.getAllFeedings("timestamp >= ? AND timestamp < ?", new String[]{Long.toString(since / 1000), Long.toString(until / 1000)}, null, null, null);
 	}
 }

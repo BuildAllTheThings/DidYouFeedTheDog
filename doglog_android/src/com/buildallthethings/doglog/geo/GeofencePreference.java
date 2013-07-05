@@ -2,6 +2,7 @@ package com.buildallthethings.doglog.geo;
 
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.location.Location;
 import android.util.Log;
 
 import com.buildallthethings.doglog.Constants;
@@ -12,9 +13,6 @@ import com.google.android.gms.location.Geofence;
  * (latitude and longitude) and radius. Persisted in SharedPreferences
  */
 public class GeofencePreference {
-	// Radius of the earth for Haversine calculations, in kilometers
-	protected static final double		earthRadius	= 6372.8;
-	
 	// Instance variables
 	private double						lat;
 	private double						lng;
@@ -41,7 +39,7 @@ public class GeofencePreference {
 	private void restore() {
 		this.lat = prefs.getFloat(this.key + "_latitude", 38.8977f);
 		this.lng = prefs.getFloat(this.key + "_longitude", -77.0366f);
-		this.radius = prefs.getFloat(this.key + "_radius", 20);
+		this.radius = prefs.getFloat(this.key + "_radius", 40);
 	}
 	
 	private void persist() {
@@ -93,19 +91,15 @@ public class GeofencePreference {
 		return true;
 	}
 	
-	protected static double haversine(double lat1, double lon1, double lat2, double lon2) {
-		double dLat = Math.toRadians(lat2 - lat1);
-		double dLon = Math.toRadians(lon2 - lon1);
-		lat1 = Math.toRadians(lat1);
-		lat2 = Math.toRadians(lat2);
-		
-		double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
-		double c = 2 * Math.asin(Math.sqrt(a));
-		return earthRadius * c;
+	public double distanceFrom(double latitude, double longitude) {
+		float[] distance = new float[1];
+		Location.distanceBetween(lat, lng, this.lat, this.lng, distance);
+		return distance[0];
 	}
 	
 	public boolean contains(double lat, double lng) {
-		double distanceInKilometers = GeofencePreference.haversine(lat, lng, this.lat, this.lng);
-		return  ((distanceInKilometers * 1000) <= this.radius);
+		return this.distanceFrom(lat, lng) <= this.getRadius();
 	}
+
+	
 }

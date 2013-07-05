@@ -16,24 +16,30 @@ public class Feeding {
 		this.id = id;
 	}
 	
-	public long getTimestamp() {
-		return this.timestamp;
+	public long getPosixTimestamp() {
+		// Timestamps are stored as Unix but passed in Java-land as Posix
+		return this.timestamp * 1000;
 	}
 	
-	public void setTimestamp(long timestamp) {
+	public void setPosixTimestamp(long timestamp) {
+		// Timestamps are stored as Unix but passed in Java-land as Posix
+		this.timestamp = timestamp / 1000;
+	}
+	
+	public void setUnixTimestamp(long timestamp) {
 		this.timestamp = timestamp;
 	}
 	
 	@Override
 	public String toString() {
 		Calendar date = Calendar.getInstance();
-		date.setTimeInMillis(this.timestamp * 1000);
+		date.setTimeInMillis(this.getPosixTimestamp());
 		return new SimpleDateFormat("E MMMM dd, hh:mm a").format(date.getTime());
 	}
 
 	public String amOrPm() {
 		Calendar date = Calendar.getInstance();
-		date.setTimeInMillis(this.timestamp * 1000);
+		date.setTimeInMillis(this.getPosixTimestamp());
 		return date.getDisplayName(Calendar.AM_PM, Calendar.SHORT, Locale.getDefault());
 	}
 }

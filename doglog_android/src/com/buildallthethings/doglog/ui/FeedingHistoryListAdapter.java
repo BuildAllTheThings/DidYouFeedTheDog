@@ -36,9 +36,9 @@ public class FeedingHistoryListAdapter extends TwoTextArrayAdapter implements On
 			this.add(new TwoTextListItem(f.amOrPm(), f.toString()));
 		}
 		this.add(new HeaderListItem(this.context.getString(R.string.previous)));
-		/*for (Feeding f : this.feedingController.getAllFeedingsBetween(0, today.getTimeInMillis())) {
+		for (Feeding f : this.feedingController.getAllFeedingsBetween(0, today.getTimeInMillis())) {
 			this.add(new TwoTextListItem(f.amOrPm(), f.toString()));
-		}*/
+		}
 		
 		this.notifyDataSetChanged();
 	}

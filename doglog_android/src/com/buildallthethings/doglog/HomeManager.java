@@ -1,6 +1,7 @@
 package com.buildallthethings.doglog;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.buildallthethings.doglog.geo.GeofencePreference;
@@ -13,6 +14,8 @@ import com.buildallthethings.doglog.ui.ErrorDialogFragment;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.location.Geofence;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
 
 import android.app.Dialog;
 import android.content.Context;
@@ -33,7 +36,7 @@ import android.widget.Toast;
  * Assuming Google Play services are available on this device, check current
  * location to determine whether it is within "home" boundaries.
  */
-public class HomeManager extends LocationAware implements OnSharedPreferenceChangeListener, OnGeofencePreferenceAddedListener, GeofenceTransitionListener {
+public class HomeManager extends LocationAware implements OnSharedPreferenceChangeListener, OnGeofencePreferenceAddedListener, GeofenceTransitionListener, LocationListener {
 	// Singleton instance
 	private static HomeManager					_instance;
 	
@@ -42,6 +45,8 @@ public class HomeManager extends LocationAware implements OnSharedPreferenceChan
 	protected final GeofenceTransitionReceiver	geofenceTransitionReceiver;
 	protected final IntentFilter				geofenceTransitionIntentFilter;
 	protected final GeofencePreference			home;
+	
+	protected final List<LocationListener>		locationListeners;
 	
 	private HomeManager(Context context) {
 		super(context);
@@ -67,20 +72,37 @@ public class HomeManager extends LocationAware implements OnSharedPreferenceChan
 		
 		this.home = new GeofencePreference(this.prefs, Constants.PREFS_GEOFENCE_HOME);
 		
+		this.locationListeners = new ArrayList<LocationListener>();
+		
+		// Register a geofence in case we change our position. The act of
+		// registering will turn on the location services components. When they
+		// are connected, we'll retrieve our current location and see if we're
+		// starting off at home or not.
 		this.register();
 	}
 	
 	/**
-	 * Once the connection is available, send a request to add retrieve the
-	 * location
+	 * Once the connection is available, send a request to receive location
+	 * updates. This is only used to display lat/long in the UI. Once we have an
+	 * initial location, the geofence will handle actual transitions.
 	 */
 	protected void continueDeterminingLocation() {
 		Location userLocation = this.locationServices.getLastLocation();
 		
 		this.setUserHomeStatus(this.home.contains(userLocation.getLatitude(), userLocation.getLongitude()));
 		
-		// Disconnect the location client
-		this.terminateLocationClient();
+		if (this.prefs.getBoolean(Constants.PREFS_UI_DISPLAY_LAT_LONG_OF_USER, true)) {
+			LocationRequest request = new LocationRequest();
+			request.setFastestInterval(10000);
+			request.setInterval(600000);
+			request.setSmallestDisplacement(5);
+			request.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+			
+			this.locationServices.requestLocationUpdates(request, this);
+		} else {
+			// Disconnect the location client
+			this.terminateLocationClient();
+		}
 	}
 	
 	protected void setUserHomeStatus(boolean userIsHome) {
@@ -212,11 +234,35 @@ public class HomeManager extends LocationAware implements OnSharedPreferenceChan
 		super.setMainActivity(mainActivity);
 		this.geofencePreferenceManager.setMainActivity(mainActivity);
 	}
-
+	
 	@Override
 	public void onGeofenceTransition(Geofence g, int transition) {
 		if (g.getRequestId().equals(Constants.PREFS_GEOFENCE_HOME)) {
 			this.setUserHomeStatus(transition == Geofence.GEOFENCE_TRANSITION_ENTER);
 		}
+	}
+	
+	@Override
+	public void onLocationChanged(Location location) {
+		for (LocationListener listener : this.locationListeners) {
+			listener.onLocationChanged(location);
+		}
+	}
+	
+	public Location getUserLocation() {
+		return this.locationServices.getLastLocation();
+	}
+	
+	public double getDistanceToHome() {
+		Location userLocation = this.getUserLocation();
+		if (userLocation != null) {
+			return this.home.distanceFrom(userLocation.getLatitude(), userLocation.getLongitude());
+		} else {
+			return -1;
+		}
+	}
+
+	public void registerLocationListener(LocationListener listener) {
+		this.locationListeners.add(listener);
 	}
 }

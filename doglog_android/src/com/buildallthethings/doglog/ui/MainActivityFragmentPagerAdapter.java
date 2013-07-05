@@ -32,6 +32,9 @@ public class MainActivityFragmentPagerAdapter extends FragmentPagerAdapter {
 				Fragment overviewFragment = new OverviewFragment();
 				return overviewFragment;
 			case 1:
+				Fragment historyFragment = new HistoryFragment();
+				return historyFragment;
+			case 2:
 				Fragment mapInteractionFragment = new MapInteractionFragment();
 				mapInteractionFragment.setArguments(args);
 				return mapInteractionFragment;
@@ -48,7 +51,7 @@ public class MainActivityFragmentPagerAdapter extends FragmentPagerAdapter {
 	
 	@Override
 	public int getCount() {
-		return 2;
+		return 3;
 	}
 	
 	@Override
@@ -58,6 +61,8 @@ public class MainActivityFragmentPagerAdapter extends FragmentPagerAdapter {
 			case 0:
 				return this.fragmentActivity.getString(R.string.title_fragment_overview).toUpperCase(l);
 			case 1:
+				return this.fragmentActivity.getString(R.string.title_fragment_history).toUpperCase(l);
+			case 2:
 				return this.fragmentActivity.getString(R.string.title_fragment_location).toUpperCase(l);
 		}
 		return null;

@@ -15,7 +15,7 @@ import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallback
 import com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener;
 import com.google.android.gms.location.LocationClient;
 
-public class LocationAware implements ConnectionCallbacks, OnConnectionFailedListener {
+public abstract class LocationAware implements ConnectionCallbacks, OnConnectionFailedListener {
 	// Stores the context required to get a location client
 	protected Context			context;
 	

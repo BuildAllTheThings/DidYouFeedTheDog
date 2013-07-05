@@ -1,9 +1,9 @@
 package com.buildallthethings.doglog;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
-import com.buildallthethings.doglog.db.Feeding;
 import com.buildallthethings.doglog.db.FeedingController;
 import com.buildallthethings.doglog.ui.FeedingHistoryListAdapter;
 import com.buildallthethings.doglog.ui.MainActivity;
@@ -20,22 +20,26 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
 
-public class FeedingManager implements OnSharedPreferenceChangeListener {
+public class FeedingManager implements OnSharedPreferenceChangeListener, OnFeedingHistoryChangedListener {
 	// Singleton instance
-	private static FeedingManager		_instance;
+	private static FeedingManager					_instance;
 	
-	protected final Context				context;
-	protected final AlarmManager		alarmManager;
-	protected final FeedingController	feedingController;
-	protected final SharedPreferences	prefs;
+	protected final Context							context;
+	protected final AlarmManager					alarmManager;
+	protected final FeedingController				feedingController;
+	protected final SharedPreferences				prefs;
+	protected List<OnFeedingHistoryChangedListener>	listeners;
 	
 	private FeedingManager(Context context) {
 		this.context = context;
 		this.alarmManager = (AlarmManager) this.context.getSystemService(Context.ALARM_SERVICE);
 		this.feedingController = new FeedingController(this.context);
+		this.feedingController.registerOnFeedingHistoryChangedListener(this);
 		this.feedingController.open();
 		
 		this.prefs = this.context.getSharedPreferences(Constants.SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE);
+		
+		this.listeners = new ArrayList<OnFeedingHistoryChangedListener>();
 		
 		this.schedule();
 	}
@@ -50,51 +54,83 @@ public class FeedingManager implements OnSharedPreferenceChangeListener {
 		return adapter;
 	}
 	
+	protected long getMealSchedule(long timestamp, int offset) {
+		Calendar schedule = Calendar.getInstance();
+		schedule.setTimeInMillis(timestamp);
+		Log.d(Constants.TAG, "FeedingManager getMealSchedule starting at " + schedule.toString());
+		// Find the zero-indexed meal from this timestamp.
+		// That means the meal that should be happening right now, or the next one up.
+		if (schedule.get(Calendar.HOUR_OF_DAY) < 8) {
+			schedule.set(Calendar.HOUR_OF_DAY, 8);
+		} else if (schedule.get(Calendar.HOUR_OF_DAY) < 20) {
+			schedule.set(Calendar.HOUR_OF_DAY, 20);
+		} else {
+			schedule.add(Calendar.DAY_OF_MONTH, 1);
+			schedule.set(Calendar.HOUR_OF_DAY, 8);
+		}
+		schedule.set(Calendar.MINUTE, 0);
+		schedule.set(Calendar.SECOND, 0);
+		schedule.set(Calendar.MILLISECOND, 0);
+		
+		// If you requested a meal other than this one, tweak the timestamp
+		// TODO once we let people configure meal schedules this won't work
+		// TODO perhaps a recursive approach
+		if (offset != 0) {
+			schedule.add(Calendar.HOUR_OF_DAY, 12 * offset);
+		}
+		
+		return schedule.getTimeInMillis();
+	}
+	
+	public Meal getMeal(long timestamp, int offset) {
+		Meal meal = new Meal(this.feedingController);
+		meal.setPosixSchedule(this.getMealSchedule(timestamp, offset));
+		
+		return meal;
+	}
+	
+	public List<Meal> getMealsForDay(long timestamp, int offset) {
+		Calendar day = Calendar.getInstance();
+		day.setTimeInMillis(timestamp);
+		day.set(Calendar.HOUR_OF_DAY, 0);
+		day.set(Calendar.MINUTE, 0);
+		day.set(Calendar.SECOND, 0);
+		day.set(Calendar.MILLISECOND, 0);
+		day.add(Calendar.DAY_OF_MONTH, offset);
+		
+		List<Meal> meals = new ArrayList<Meal>();
+		long since = day.getTimeInMillis();
+		day.add(Calendar.DAY_OF_MONTH, 1);
+		long until = day.getTimeInMillis();
+		int i = 0;
+		while (true) {
+			Meal meal = this.getMeal(since, i);
+			if (meal.getPosixSchedule() >= since && meal.getPosixSchedule() < until) {
+				meals.add(meal);
+				i++;
+			} else {
+				break;
+			}
+		}
+		return meals;
+	}
+	
 	public void recheck() {
 		// Has the dog been fed yet?
 		// First, determine which meal we think corresponds to "right now".
 		long now = System.currentTimeMillis();
-		Calendar earlierMeal = Calendar.getInstance();
-		earlierMeal.setTimeInMillis(now);
-		if (earlierMeal.get(Calendar.HOUR) < 8) {
-			earlierMeal.add(Calendar.DAY_OF_MONTH, -1);
-			earlierMeal.set(Calendar.HOUR, 20);
-		} else if (earlierMeal.get(Calendar.HOUR) < 20) {
-			earlierMeal.set(Calendar.HOUR, 8);
-		} else {
-			earlierMeal.set(Calendar.HOUR, 20);
-		}
-		earlierMeal.set(Calendar.MINUTE, 0);
-		earlierMeal.set(Calendar.SECOND, 0);
-		earlierMeal.set(Calendar.MILLISECOND, 0);
-		
-		Calendar laterMeal = Calendar.getInstance();
-		laterMeal.setTimeInMillis(now);
-		if (laterMeal.get(Calendar.HOUR) < 8) {
-			laterMeal.set(Calendar.HOUR, 8);
-		} else if (laterMeal.get(Calendar.HOUR) < 20) {
-			laterMeal.set(Calendar.HOUR, 20);
-		} else {
-			laterMeal.add(Calendar.DAY_OF_MONTH, 1);
-			laterMeal.set(Calendar.HOUR, 8);
-		}
-		laterMeal.set(Calendar.MINUTE, 0);
-		laterMeal.set(Calendar.SECOND, 0);
-		laterMeal.set(Calendar.MILLISECOND, 0);
+		long earlierMealSchedule = this.getMealSchedule(now, -1);
+		long laterMealSchedule = this.getMealSchedule(now, 0);
 		
 		// Which meal is closer in time?
-		Calendar targetMeal = (now - earlierMeal.getTimeInMillis() < laterMeal.getTimeInMillis() - now) ? earlierMeal : laterMeal;
-		// We'll define a "reasonable" amount of time as splitting the distance between meals.  Note that this is actually a crazy idea.
-		targetMeal.add(Calendar.HOUR, -6);
-		// Then, determine the earliest time this meal could have happened, if the world were sane.
-		long since = targetMeal.getTimeInMillis();
-		targetMeal.add(Calendar.HOUR, 12);
-		long until = targetMeal.getTimeInMillis();
+		Meal meal = new Meal(this.feedingController);
+		if (now - earlierMealSchedule < laterMealSchedule - now) {
+			meal.setPosixSchedule(earlierMealSchedule);
+		} else {
+			meal.setPosixSchedule(laterMealSchedule);
+		}
 		
-		// Then, check to see if any feedings actually exist in said time range.
-		List<Feeding> feedings = this.feedingController.getAllFeedingsBetween(since, until);
-		
-		if (feedings.size() == 0) {
+		if (meal.getFedStatus() == false) {
 			if (this.prefs.getBoolean(Constants.PREFS_SEND_NOTIFICATIONS, true) && this.prefs.getBoolean(Constants.PREFS_NOTIFY_FEEDING_TIME, true)) {
 				this.sendNotification();
 			}
@@ -128,7 +164,7 @@ public class FeedingManager implements OnSharedPreferenceChangeListener {
 		nextFeeding.add(Calendar.MINUTE, minutes * polarity);
 		
 		// temporarily discard all that work for debugging purposes
-		//nextFeeding.setTimeInMillis(System.currentTimeMillis() + 20000);
+		// nextFeeding.setTimeInMillis(System.currentTimeMillis() + 20000);
 		
 		Intent intent = new Intent(context, FeedingTimeReceiver.class);
 		PendingIntent pendingIntent = PendingIntent.getBroadcast(this.context, 0, intent, 0);
@@ -164,11 +200,12 @@ public class FeedingManager implements OnSharedPreferenceChangeListener {
 		
 		// Set the notification contents
 		builder
-				// Disappear when clicked
-				.setAutoCancel(true)
+		// Disappear when clicked
+		.setAutoCancel(true)
 				// We want the user to actually notice this
 				.setPriority(Notification.PRIORITY_HIGH)
-				// We'll be good and use the default notification settings, though
+				// We'll be good and use the default notification settings,
+				// though
 				.setDefaults(Notification.DEFAULT_ALL)
 				// Start the MainActivity on the Overview tab when clicked
 				.setContentIntent(this.buildPendingIntent(MainActivity.class, Constants.INTENT_ACTION_VIEW_FEEDINGS))
@@ -189,6 +226,23 @@ public class FeedingManager implements OnSharedPreferenceChangeListener {
 		mNotificationManager.notify(0, builder.build());
 	}
 	
+	public void registerOnFeedingHistoryChangedListener(OnFeedingHistoryChangedListener listener) {
+		this.listeners.add(listener);
+	}
+	
+	@Override
+	public void onSharedPreferenceChanged(SharedPreferences arg0, String arg1) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onFeedingHistoryChanged() {
+		for (OnFeedingHistoryChangedListener listener : this.listeners) {
+			listener.onFeedingHistoryChanged();
+		}
+	}
+	
 	/**
 	 * Ensures there is only ever a single instance of FeedingManager
 	 * 
@@ -199,11 +253,5 @@ public class FeedingManager implements OnSharedPreferenceChangeListener {
 			_instance = new FeedingManager(context);
 		}
 		return _instance;
-	}
-
-	@Override
-	public void onSharedPreferenceChanged(SharedPreferences arg0, String arg1) {
-		// TODO Auto-generated method stub
-		
 	}
 }

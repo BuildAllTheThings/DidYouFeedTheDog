@@ -10,6 +10,9 @@
     <string name="home_indicator_icon">Home indicator icon</string>
     <string name="you_are_home">You are home</string>
     <string name="you_are_not_home">You are not home</string>
+    <string name="user_location_indicator_icon">User location indicator icon</string>
+    <string name="last_meal_indicator_icon">Last meal indicator icon</string>
+    <string name="next_meal_indicator_icon">Next meal indicator icon</string>
 	<string name="toast_home_set_to">Home set to</string>
 	<string name="toast_unable_to_set_home">Unable to set home</string>
 	<string name="add_new_feeding_button">Add new feeding button</string>
@@ -21,6 +24,7 @@
     <string name="action_settings">Settings</string>
     <string name="action_about">About</string>
     <string name="title_fragment_overview">Overview</string>
+    <string name="title_fragment_history">History</string>
     <string name="title_fragment_location">Location</string>
     <string name="set_address">Set address</string>
     <string name="feeding_reminder_notification_title">Did you feed the dog?</string>

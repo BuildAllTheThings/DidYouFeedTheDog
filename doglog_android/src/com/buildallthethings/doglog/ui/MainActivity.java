@@ -25,8 +25,8 @@ public class MainActivity extends FragmentActivity implements GeofenceCreationDi
 	
 	// Geofencing
 	protected HomeManager						homeManager;
-	private GeofenceTransitionReceiver			mBroadcastReceiver;
-	private IntentFilter						mIntentFilter;
+	protected GeofenceTransitionReceiver		geofenceReceiver;
+	protected IntentFilter						geofenceErrorIntentFilter;
 	
 	// Logging feedings
 	protected FeedingManager					feedingManager;
@@ -46,12 +46,12 @@ public class MainActivity extends FragmentActivity implements GeofenceCreationDi
 		
 		// Create a new broadcast receiver to receive updates from the listeners
 		// and service
-		this.mBroadcastReceiver = new GeofenceTransitionReceiver();
+		this.geofenceReceiver = new GeofenceTransitionReceiver();
 		
 		// Create an intent filter for the broadcast receiver
-		this.mIntentFilter = new IntentFilter();
-		this.mIntentFilter.addAction(Constants.INTENT_ACTION_GEOFENCE_ERROR);
-		this.mIntentFilter.addCategory(Constants.INTENT_CATEGORY_LOCATION_SERVICES);
+		this.geofenceErrorIntentFilter = new IntentFilter();
+		this.geofenceErrorIntentFilter.addAction(Constants.INTENT_ACTION_GEOFENCE_ERROR);
+		this.geofenceErrorIntentFilter.addCategory(Constants.INTENT_CATEGORY_LOCATION_SERVICES);
 		
 		this.homeManager = HomeManager.getInstance(this);
 		this.homeManager.setMainActivity(this);
@@ -108,7 +108,7 @@ public class MainActivity extends FragmentActivity implements GeofenceCreationDi
 		super.onResume();
 		
 		// Register the broadcast receiver to receive status updates
-		LocalBroadcastManager.getInstance(this).registerReceiver(this.mBroadcastReceiver, this.mIntentFilter);
+		LocalBroadcastManager.getInstance(this).registerReceiver(this.geofenceReceiver, this.geofenceErrorIntentFilter);
 	}
 	
 	@Override
